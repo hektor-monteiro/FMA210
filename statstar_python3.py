@@ -79,15 +79,15 @@ def   EOS(X, Z, XCNO, mu, P, T,izone,cst):
 #  see Prialnik Eq. 5.5 or C&O Eq. (10.26).
 #
       if ((T < 0.0e0) or (P < 0.0e0)):
-          print ' Something is a little wrong here.'
-          print ' You are asking me to deal with either a negative temperature'
-          print ' or a negative pressure.  I am sorry but that is not in my'
-          print ' contract! You will have to try again with different'
-          print ' initial conditions.'
-          print ' In case it helps, I detected the problem in zone ',izone
-          print ' with the following conditions:'
-          print 'T = ',T,' K'
-          print 'P = ',P,' dynes/cm**2'
+          print(' Something is a little wrong here.')
+          print(' You are asking me to deal with either a negative temperature')
+          print(' or a negative pressure.  I am sorry but that is not in my')
+          print(' contract! You will have to try again with different')
+          print(' initial conditions.')
+          print(' In case it helps, I detected the problem in zone ',izone)
+          print(' with the following conditions:')
+          print('T = ',T,' K')
+          print('P = ',P,' dynes/cm**2')
           return (0.0, 0.0, 0.0,0.0,1)
 
 
@@ -95,18 +95,18 @@ def   EOS(X, Z, XCNO, mu, P, T,izone,cst):
       Pgas = P - Prad
       rho=(mu*cst.m_H/cst.k_B)*(Pgas/T)
       if (rho < 0.0e0):
-          print ' I am sorry, but a negative density was detected.'
-          print ' my equation-of-state routine is a bit baffled by this new'
-          print ' physical system you have created.  The radiation pressure'
-          print ' is probably too great, implying that the star is unstable.'
-          print ' Please try something a little less radical next time.'
-          print ' In case it helps, I detected the problem in zone '
-          print ' with the following conditions:'
-          print 'T       = {0:12.5E} K'.format(T)
-          print 'P_total = {0:12.5E} dynes/cm**2'.format(P)
-          print 'P_rad   = {0:12.5E} dynes/cm**2'.format(Prad)
-          print 'P_gas   = {0:12.5E} dynes/cm**2'.format(Pgas)
-          print 'rho     = {0:12.5E} g/cm**3'.format(rho)
+          print(' I am sorry, but a negative density was detected.')
+          print(' my equation-of-state routine is a bit baffled by this new')
+          print(' physical system you have created.  The radiation pressure')
+          print(' is probably too great, implying that the star is unstable.')
+          print(' Please try something a little less radical next time.')
+          print(' In case it helps, I detected the problem in zone ')
+          print(' with the following conditions:')
+          print('T       = {0:12.5E} K'.format(T))
+          print('P_total = {0:12.5E} dynes/cm**2'.format(P))
+          print('P_rad   = {0:12.5E} dynes/cm**2'.format(Prad))
+          print('P_gas   = {0:12.5E} dynes/cm**2'.format(Pgas))
+          print('rho     = {0:12.5E} g/cm**3'.format(rho))
           return (rho, 0.0 , 0.0 ,0.0,1)
 
 #
@@ -123,7 +123,7 @@ def   EOS(X, Z, XCNO, mu, P, T,izone,cst):
       kappa = k_bf + k_ff + k_e
 #
 #  Compute energy generation by the pp chain and the CNO cycle.  These
-#  are calculated using Eqs. (10.49) and (10.53) Prialnik Eq. 4.6, 4.7 + screening factor, which come from 
+#  are calculated using Eqs. (10.49) and (10.53) Prialnik Eq. 4.6, 4.7 + screening factor, which come from
 #  Fowler, Caughlan, and Zimmerman (1975). The screening factor for the
 #  pp chain is calculated as fpp# see Clayton (1968), p. 359ff.
 #
@@ -145,7 +145,7 @@ def   EOS(X, Z, XCNO, mu, P, T,izone,cst):
 
 
 
-# 
+#
 #  The following four function subprograms calculate the gradients of
 #  pressure, mass, luminosity, and temperature at r.
 
@@ -172,7 +172,7 @@ def RUNGE(f_im1, dfdr, r_im1, deltar, irc, X, Z, XCNO,mu, izone,cst):
 
       f_temp=np.zeros(4)
       f_i=np.zeros(4)
-     
+
       dr12 = deltar/2.0e0
       dr16 = deltar/6.0e0
       r12  = r_im1 + dr12
@@ -196,7 +196,7 @@ def RUNGE(f_im1, dfdr, r_im1, deltar, irc, X, Z, XCNO,mu, izone,cst):
       if (ierr != 0):
           return f_i,ierr
 
-#      
+#
       for i in range(0,4):
           f_temp[i] = f_im1[i] + deltar*df2[i]
 
@@ -236,7 +236,7 @@ def FUNDEQ(r,f,irc,X,Z,XCNO,mu,izone,cst):
 
 def StatStar(Msolar,Lsolar,Te,X,Z):
 
-# 
+#
 #  Main program for calculating stellar structure
 #
 #  Variables, run-time parameters and settings:
@@ -246,7 +246,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 #         = 0 (initial surface step size of Rs/1000.)
 #         = 1 (standard step size of Rs/100.)
 #         = 2 (core step size of Rs/5000.)
-#  
+#
 #  Nstart = number of steps for which starting equations are to be used
 #           (the outermost zone is assumed to be radiative)
 #  Nstop = maximum number of allowed zones in the star
@@ -289,17 +289,17 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
       Rs=0.0
       T0=0.0
       P0=0.0
-      Pcore=0.0   
-      Tcore=0.0   
-      rhocor=0.0  
-      epscor=0.0  
-      rhomax=0.0  
+      Pcore=0.0
+      Tcore=0.0
+      rhocor=0.0
+      epscor=0.0
+      rhomax=0.0
       Rsolar=0.0
 
       Y=1.0-(X+Z)
 
 
-      #     tog_bf = bound-free opacity constant 
+      #     tog_bf = bound-free opacity constant
       #             (ratio of guillotine to gaunt factors)
       tog_bf0=0.01
 
@@ -338,7 +338,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
       #     kPad = P/T**(gamma/(gamma-1)) (adiabatic gas law constant)
       #     g_ff = free-free opacity gaunt factor (assumed to be unity)
       #
-  
+
       Rsun=6.9599e10
       Msun=1.989e33
       Lsun=3.826e33
@@ -354,15 +354,15 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
       cst.a=7.56591e-15
       cst.G=6.67259e-8
       cst.k_B=1.380658e-16
-      cst.m_H=1.673534e-24 
+      cst.m_H=1.673534e-24
       cst.gamma= 5.0e0/3
-      cst.g_ff= 1.0e0   
+      cst.g_ff= 1.0e0
 
 #
 #  Select the mass fraction CNO to be 50% of Z.
 #
       XCNO = Z/2.0e0
-#     
+#
 #  Calculate the mass, luminosity, and radius of the star.
 #  The radius is calculated from Prialnik Eq. 1.3 (C&O Eq. 3.17).
 #
@@ -376,7 +376,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 #
       deltar = -Rs/1000.0e0
       idrflg = 0
-#     
+#
 #  Calculate mean molecular weight mu assuming complete ionization
 #  (see Prialnik Eq. 3.18, 3.25 or C&O Eq. 10.21).
 #
@@ -388,7 +388,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
       cst.gamrat = cst.gamma/(cst.gamma - 1.0e0)
 #
 #  Initialize values of r, P, M_r, L_r, T, rho, kappa, and epslon at
-#  the surface.  The outermost zone is assumed to be zone 1.  The zone 
+#  the surface.  The outermost zone is assumed to be zone 1.  The zone
 #  number increases toward the center.
 #
 
@@ -409,7 +409,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
       else:
           rho[initsh],kappa[initsh],epslon[initsh],tog_bf[initsh],ierr=EOS(X, Z, XCNO, mu, P[initsh], T[initsh], 0 ,cst)
           if ierr != 0:
-              print "we're stopping now"
+              print ("we're stopping now")
               istop=0
 
 #
@@ -428,15 +428,15 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
           rho[ip1],kappa[ip1],epslon[ip1],tog_bf[ip1],ierr=EOS(X, Z, XCNO, mu, P[ip1], T[ip1], ip1 ,cst)
 
           if ierr != 0:
-              print 'Values from the previous zone are:'
-              print 'r/Rs      = {0:12.5E}'.format(r[i]/Rs)
-              print 'rho       = {0:12.5E}  g/cm**3'.format(rho[i])
-              print 'M_r/Ms    = {0:12.5E}'.format(M_r[i]/Ms)
-              print 'kappa     = {0:12.5E}  cm**2/g'.format(kappa[i])
-              print 'T         = {0:12.5E}  K'.format(T[i])
-              print 'epsilon   = {0:12.5E}  ergs/g/s'.format(epslon[i])
-              print 'P         = {0:12.5E}  dynes/cm**2'.format(P[i])
-              print 'L_r/Ls    = {0:12.5E}'.format(L_r[i]/Ls)
+              print('Values from the previous zone are:')
+              print('r/Rs      = {0:12.5E}'.format(r[i]/Rs))
+              print('rho       = {0:12.5E}  g/cm**3'.format(rho[i]))
+              print('M_r/Ms    = {0:12.5E}'.format(M_r[i]/Ms))
+              print('kappa     = {0:12.5E}  cm**2/g'.format(kappa[i]))
+              print('T         = {0:12.5E}  K'.format(T[i]))
+              print('epsilon   = {0:12.5E}  ergs/g/s'.format(epslon[i]))
+              print('P         = {0:12.5E}  dynes/cm**2'.format(P[i]))
+              print('L_r/Ls    = {0:12.5E}'.format(L_r[i]/Ls))
               break
 #
 #  Determine whether convection will be operating in the next zone by
@@ -463,8 +463,8 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
           if (np.abs(deltaM) > (0.001e0*Ms)):
               if (ip1 > 1):
                   ip1 = ip1 - 1
-                  print ' The variation in mass has become larger than 0.001*Ms'
-                  print ' leaving the approximation loop before Nstart was reached'
+                  print(' The variation in mass has become larger than 0.001*Ms')
+                  print(' leaving the approximation loop before Nstart was reached')
                   break
 #
 #
@@ -482,11 +482,11 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 #  P, M_r, L_r, and T are returned from the Runge-Kutta routine in
 #  f_i(1), f_i(2), f_i(3), and f_i(4), respectively.
 #
-#  The stellar structure equations 
+#  The stellar structure equations
 #           dPdr (Prialnik 5.1 or C&O Eq. 10.7)
 #           dMdr (Prialnik 5.2 or C&O Eq. 10.8)
-#           dLdr (Prialnik 5.4 or C&O Eq. 10.45) and 
-#           dTdr (Prialnik 5.3 or C&O Eq. 10.61 or Eq. 10.81) 
+#           dLdr (Prialnik 5.4 or C&O Eq. 10.45) and
+#           dTdr (Prialnik 5.3 or C&O Eq. 10.61 or Eq. 10.81)
 #           are calculated in function calls, defined previously in the code.
 #
 
@@ -509,18 +509,18 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
           f_i,ierr=RUNGE(f_im1, dfdr, r[im1], deltar, irc, X, Z, XCNO, mu, i,cst)
 
           if (ierr != 0):
-              print ' The problem occurred in the Runge-Kutta routine'
-              print ' Values from the previous zone are:'
-              print 'r/Rs    = {0:12.5e}'.format(r[im1]/Rs)
-              print 'rho     = {0:12.5e} g/cm**3'.format(rho[im1])
-              print 'M_r/Ms  = {0:12.5e}'.format(M_r[im1]/Ms)
-              print 'kappa   = {0:12.5e} cm**2/g'.format(kappa[im1])
-              print 'T       = {0:12.5e} K'.format(T[im1])
-              print 'epsilon = {0:12.5e} ergs/g/s'.format(epslon[im1])
-              print 'P       = {0:12.5e} dynes/cm**2'.format(P[im1])
-              print 'L_r/Ls  = {0:12.5e}'.format(L_r[im1]/Ls)
+              print(' The problem occurred in the Runge-Kutta routine')
+              print(' Values from the previous zone are:')
+              print('r/Rs    = {0:12.5e}'.format(r[im1]/Rs))
+              print('rho     = {0:12.5e} g/cm**3'.format(rho[im1]))
+              print('M_r/Ms  = {0:12.5e}'.format(M_r[im1]/Ms))
+              print('kappa   = {0:12.5e} cm**2/g'.format(kappa[im1]))
+              print('T       = {0:12.5e} K'.format(T[im1]))
+              print('epsilon = {0:12.5e} ergs/g/s'.format(epslon[im1]))
+              print('P       = {0:12.5e} dynes/cm**2'.format(P[im1]))
+              print('L_r/Ls  = {0:12.5e}'.format(L_r[im1]/Ls))
               break
-#     
+#
 #  Update stellar parameters for the next zone, including adding
 #  dr to the old radius (note that dr <  0 since the integration is
 #  inward).
@@ -536,20 +536,20 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 #
           rho[i],kappa[i],epslon[i],tog_bf[i],ierr=EOS(X, Z, XCNO, mu, P[i], T[i], i, cst)
 
-          if (ierr != 0):           
-              print ' Values from the previous zone are:'
-              print 'r/Rs    = {0:12.5e}'.format(r[im1]/Rs)
-              print 'rho     = {0:12.5e} g/cm**3'.format(rho[im1])
-              print 'M_r/Ms  = {0:12.5e}'.format(M_r[im1]/Ms)
-              print 'kappa   = {0:12.5e} cm**2/g'.format(kappa[im1])
-              print 'T       = {0:12.5e} K'.format(T[im1])
-              print 'epsilon = {0:12.5e} ergs/g/s'.format(epslon[im1])
-              print 'P       = {0:12.5e} dynes/cm**2'.format(P[im1])
-              print 'L_r/Ls  = {0:12.5e}'.format(L_r[im1]/Ls)
+          if (ierr != 0):
+              print(' Values from the previous zone are:')
+              print('r/Rs    = {0:12.5e}'.format(r[im1]/Rs))
+              print('rho     = {0:12.5e} g/cm**3'.format(rho[im1]))
+              print('M_r/Ms  = {0:12.5e}'.format(M_r[im1]/Ms))
+              print('kappa   = {0:12.5e} cm**2/g'.format(kappa[im1]))
+              print('T       = {0:12.5e} K'.format(T[im1]))
+              print('epsilon = {0:12.5e} ergs/g/s'.format(epslon[im1]))
+              print('P       = {0:12.5e} dynes/cm**2'.format(P[im1]))
+              print('L_r/Ls  = {0:12.5e}'.format(L_r[im1]/Ls))
               istop = i
               break
 
-          if (debug == 1): print i,r[i],M_r[i],L_r[i],T[i],P[i],rho[i],kappa[i],epslon[i],tog_bf[i]
+          if (debug == 1): print (i,r[i],M_r[i],L_r[i],T[i],P[i],rho[i],kappa[i],epslon[i],tog_bf[i])
 
 
 
@@ -565,7 +565,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
               irc = 0
 
 #
-#  Check to see whether the center has been reached.  If so, set Igoof and 
+#  Check to see whether the center has been reached.  If so, set Igoof and
 #  estimate the central conditions rhocor, epscor, Pcore, and Tcore.
 #  The central density is estimated to be the average density of the
 #  remaining central ball, the central pressure is determined by
@@ -578,21 +578,21 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 #
           if ((r[i] <= np.abs(deltar)) and ((L_r[i] >= (0.1e0*Ls)) or (M_r[i] >= (0.01e0*Ms)))):
               #   Hit center before mass/luminosity depleted
-              Igoof = 6   
+              Igoof = 6
           elif (L_r[i] <= 0.0e0):
               #   Obtained negative central luminosity
-              Igoof = 5   
+              Igoof = 5
               # rho: Taylor expansion at center
-              rhocor = M_r[i]/(4.0e0/3.0e0*np.pi*r[i]**3)               
+              rhocor = M_r[i]/(4.0e0/3.0e0*np.pi*r[i]**3)
               if (M_r[i] != 0.0e0):
                   # energy generation rate
-                  epscor = L_r[i]/M_r[i]                               
+                  epscor = L_r[i]/M_r[i]
               else:
                   epscor = 0.0e0
               # P:  Taylor expansion at center
-              Pcore = P[i] + 2.0e0/3.0e0*np.pi*cst.G*rhocor**2*r[i]**2  
+              Pcore = P[i] + 2.0e0/3.0e0*np.pi*cst.G*rhocor**2*r[i]**2
               # Assume ideal gas
-              Tcore = Pcore*mu*cst.m_H/(rhocor*cst.k_B)                 
+              Tcore = Pcore*mu*cst.m_H/(rhocor*cst.k_B)
           elif (M_r[i] <= 0.0e0):
               Igoof  = 4  #  Model has a hole in center (negative density!)
               Rhocor = 0.0e0
@@ -600,32 +600,32 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
               Pcore  = 0.0e0
               Tcore  = 0.0e0
           elif ((r[i] < (0.02e0*Rs)) and ((M_r[i] < (0.01e0*Ms)) and ((L_r[i] < 0.1e0*Ls)))):
-              #  if we've reached <2% star's radius, 
-              #<1% mass enclosed and <10% luminosity then....     
+              #  if we've reached <2% star's radius,
+              #<1% mass enclosed and <10% luminosity then....
               # rho: Taylor expansion at center
-              rhocor = M_r[i]/(4./3.*np.pi*r[i]**3)                 
+              rhocor = M_r[i]/(4./3.*np.pi*r[i]**3)
               # set maximum reasonable core mass
-              rhomax = 10.0e0*(rho[i]/rho[im1])*rho[i]              
-              epscor = L_r[i]/M_r[i]          
+              rhomax = 10.0e0*(rho[i]/rho[im1])*rho[i]
+              epscor = L_r[i]/M_r[i]
               # P: Taylor expansion at center
-              Pcore  = P[i] + 2.0e0/3.0e0*np.pi*cst.G*rhocor**2*r[i]**2   
+              Pcore  = P[i] + 2.0e0/3.0e0*np.pi*cst.G*rhocor**2*r[i]**2
               # Assume ideal gas
-              Tcore  = Pcore*mu*cst.m_H/(rhocor*cst.k_B)                  
-            # In general, these should all produce values 
+              Tcore  = Pcore*mu*cst.m_H/(rhocor*cst.k_B)
+            # In general, these should all produce values
               # that rise towards center (but not too high)
-              if ((rhocor < rho[i]) or (rhocor > rhomax)):          
+              if ((rhocor < rho[i]) or (rhocor > rhomax)):
                   # rho is off either large or small
-                  Igoof = 1                             
+                  Igoof = 1
               elif (epscor < epslon[i]):
                   # energy generation rate a bit off (low)
-                  Igoof = 2                           
+                  Igoof = 2
               elif (Tcore < T[i]):
                   # Temperature a bit off (low)
-                  Igoof = 3                            
+                  Igoof = 3
               else:
                   # number of allowed shells has been exceeded
                   Igoof = 0
-                  
+
           if (Igoof != -1):
               istop = i
               break
@@ -652,54 +652,54 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 
       if  (Igoof != 0):
           if (Igoof == -1):
-              print 'Sorry to be the bearer of bad news, but...'
-              print '       Your model has some problems'
-              print 'The number of allowed shells has been exceeded'
+              print('Sorry to be the bearer of bad news, but...')
+              print('       Your model has some problems')
+              print('The number of allowed shells has been exceeded')
 
           if (Igoof == 1):
-              print 'It looks like you are getting close,'
-              print 'however, there are still a few minor errors'
-              print 'The core density seems a bit off,'
-              print ' density should increase smoothly toward the center.'
-              print ' The density of the last zone calculated was rho = ',rho[istop],' gm/cm**3'
-              print rhocor,rhomax
+              print('It looks like you are getting close,')
+              print('however, there are still a few minor errors')
+              print('The core density seems a bit off,')
+              print(' density should increase smoothly toward the center.')
+              print(' The density of the last zone calculated was rho = ',rho[istop],' gm/cm**3')
+              print (rhocor,rhomax)
           if (rhocor > 1e10):
-              print 'It looks like you will need a degenerate'
-              print ' neutron gas and general relativity'
-              print ' to solve this core.  Who do you think I am, Einstein?'
+              print('It looks like you will need a degenerate')
+              print(' neutron gas and general relativity')
+              print(' to solve this core.  Who do you think I am, Einstein?')
 
           if (Igoof == 2):
-              print 'It looks like you are getting close,'
-              print 'however, there are still a few minor errors'
-              print 'The core epsilon seems a bit off,'
-              print ' epsilon should vary smoothly near the center.'
-              print ' The value calculated for the last zone was eps =',epslon[istop],' ergs/g/s'
+              print('It looks like you are getting close,')
+              print('however, there are still a few minor errors')
+              print('The core epsilon seems a bit off,')
+              print(' epsilon should vary smoothly near the center.')
+              print(' The value calculated for the last zone was eps =',epslon[istop],' ergs/g/s')
 
           if (Igoof == 3):
-              print 'It looks like you are getting close,'
-              print 'however, there are still a few minor errors'
-              print ' Your extrapolated central temperature is too low'
-              print ' a little more fine tuning ought to do it.'
-              print ' The value calculated for the last zone was T = ',T[istop],' K'
+              print('It looks like you are getting close,')
+              print('however, there are still a few minor errors')
+              print(' Your extrapolated central temperature is too low')
+              print(' a little more fine tuning ought to do it.')
+              print(' The value calculated for the last zone was T = ',T[istop],' K')
 
           if (Igoof == 4):
-              print 'Sorry to be the bearer of bad news, but...'
-              print '       Your model has some problems'
-              print 'You created a star with a hole in the center!'
+              print('Sorry to be the bearer of bad news, but...')
+              print('       Your model has some problems')
+              print('You created a star with a hole in the center!')
 
           if (Igoof == 5):
-              print 'Sorry to be the bearer of bad news, but...'
-              print '       Your model has some problems'
-              print 'This star has a negative central luminosity!'
+              print('Sorry to be the bearer of bad news, but...')
+              print('       Your model has some problems')
+              print('This star has a negative central luminosity!')
 
           if (Igoof == 6):
-              print 'Sorry to be the bearer of bad news, but...'
-              print '       Your model has some problems'
-              print 'You hit the center before the mass and/or '
-              print 'luminosity were depleted!'
+              print('Sorry to be the bearer of bad news, but...')
+              print('       Your model has some problems')
+              print('You hit the center before the mass and/or ')
+              print('luminosity were depleted!')
       else:
-          print 'CONGRATULATIONS, I THINK YOU FOUND IT!'
-          print 'However, be sure to look at your model carefully.'
+          print('CONGRATULATIONS, I THINK YOU FOUND IT!')
+          print('However, be sure to look at your model carefully.')
 
 #
 #  Print the central conditions.  If necessary, set limits for the
@@ -738,13 +738,13 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
 #
 #  Print data from the center of the star outward, labeling convective
 #   or radiative zones by c or r, respectively.  If abs(dlnP/dlnT)
-#  exceeds 99.9, set a print warning flag (*) and set the output limit 
+#  exceeds 99.9, set a print warning flag (*) and set the output limit
 #  to +99.9 or -99.9 as appropriate to avoid format field overflows.
-#      
+#
       f.write('   r        Qm       L_r       T        P        rho      kap      eps     dlPdlT\n')
 
       for ic in range(0,istop+1):
-          i = istop - ic 
+          i = istop - ic
           Qm = 1.0e0 - M_r[i]/Ms    # Total mass fraction down to radius
 
 
@@ -753,39 +753,39 @@ def StatStar(Msolar,Lsolar,Te,X,Z):
           else:
               rcf = 'r'
           if (np.abs(dlPdlT[i]) > dlPlim):
-              dlPdlT[i] = np.copysign(dlPlim,dlPdlT[i])   
+              dlPdlT[i] = np.copysign(dlPlim,dlPdlT[i])
               clim = '*'
           else:
               clim = ' '
-          s='{0:7.2E} {1:7.2E} {2:7.2E} {3:7.2E} {4:7.2E} {5:7.2E} {6:7.2E} {7:6.2E}{8:1s}{9:1s} {10:5.1f}\n'.format(r[i], Qm, L_r[i], T[i], P[i], rho[i], kappa[i],epslon[i], clim, rcf, dlPdlT[i])  
+          s='{0:7.2E} {1:7.2E} {2:7.2E} {3:7.2E} {4:7.2E} {5:7.2E} {6:7.2E} {7:6.2E}{8:1s}{9:1s} {10:5.1f}\n'.format(r[i], Qm, L_r[i], T[i], P[i], rho[i], kappa[i],epslon[i], clim, rcf, dlPdlT[i])
           f.write(s)
 
 #     Output to screen
-      print 
-      print '***** The integration has been completed *****'
-      print '      The model has been stored in starmodl_py.dat'
-      print 
+      print
+      print('***** The integration has been completed *****')
+      print('      The model has been stored in starmodl_py.dat')
+      print
       return Igoof,ierr,istop
 
 def main():
 
-#                             
+#
 #  Enter desired stellar parameters
 #
 
-  
+
       getinp=1  # read in input
       if (getinp == 1):
-           Msolar=input(' Enter the mass of the star (in solar units):')
-           Lsolar=input(' Enter the luminosity of the star (in solar units):')
-           Te=input(' Enter the effective temperature of the star (in K):')
+           Msolar=float(input(' Enter the mass of the star (in solar units):'))
+           Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
+           Te=float(input(' Enter the effective temperature of the star (in K):'))
            Y=-1.0
            while (Y < 0.0):
-               X=input(' Enter the mass fraction of hydrogen (X):')
-               Z=input(' Enter the mass fraction of metals (Z):')
+               X=float(input(' Enter the mass fraction of hydrogen (X):'))
+               Z=float(input(' Enter the mass fraction of metals (Z):'))
                Y = 1.e0 - X - Z
-               if Y < 0: 
-                   print 'You must have X + Z <= 1. Please reenter composition.'
+               if Y < 0:
+                   print('You must have X + Z <= 1. Please reenter composition.')
 
       Igoof,ierr,istop=StatStar(Msolar,Lsolar,Te,X,Z)
 
