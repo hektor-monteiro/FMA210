@@ -818,27 +818,27 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
       print
       return Igoof,ierr,istop
 
-# def main():
+def main():
 
-# #
-# #  Enter desired stellar parameters
-# #
+#
+#  Enter desired stellar parameters
+#
 
 
-#       getinp=1  # read in input
-#       if (getinp == 1):
-#            Msolar=float(input(' Enter the mass of the star (in solar units):'))
-#            Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
-#            Te=float(input(' Enter the effective temperature of the star (in K):'))
-#            Y=-1.0
-#            while (Y < 0.0):
-#                X=float(input(' Enter the mass fraction of hydrogen (X):'))
-#                Z=float(input(' Enter the mass fraction of metals (Z):'))
-#                Y = 1.e0 - X - Z
-#                if Y < 0:
-#                    print('You must have X + Z <= 1. Please reenter composition.')
+      getinp=1  # read in input
+      if (getinp == 1):
+            Msolar=float(input(' Enter the mass of the star (in solar units):'))
+            Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
+            Te=float(input(' Enter the effective temperature of the star (in K):'))
+            Y=-1.0
+            while (Y < 0.0):
+                X=float(input(' Enter the mass fraction of hydrogen (X):'))
+                Z=float(input(' Enter the mass fraction of metals (Z):'))
+                Y = 1.e0 - X - Z
+                if Y < 0:
+                    print('You must have X + Z <= 1. Please reenter composition.')
 
-#       Igoof,ierr,istop=StatStar(Msolar,Lsolar,Te,X,Z)
+      Igoof,ierr,istop=StatStar(Msolar,Lsolar,Te,X,Z)
 
-# main()
+main()
 
