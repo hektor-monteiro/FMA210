@@ -32,7 +32,7 @@ import numpy as np
 #  surface of the star using expansions of the stellar structure
 #  equations (M_r and L_r are assumed to be constant).
 #
-def STARTMDL(deltar, X, Z, mu, Rs, r_i, M_ri, L_ri, tog_bf,irc,cst):
+def STARTMDL(i, deltar, X, Z, mu, Rs, Te, r_i, M_ri, L_ri, tog_bf,irc,cst):
 #
 #     X = hydrogen mass fraction
 #     Z = metal mass fraction
@@ -51,11 +51,11 @@ def STARTMDL(deltar, X, Z, mu, Rs, r_i, M_ri, L_ri, tog_bf,irc,cst):
 #  and electron scattering opacity)# see Prialnik Eq. 5.1, 5.3 and Sec. 3.7 or C&O Eqs. (H.1), (H.2), (9.19),
 #  and (9.20).
 #
-      if (irc == 0):
+      if(irc == 0):
           T_ip1 = cst.G*M_rip1*mu*cst.m_H/(4.25e0*cst.k_B)*(1.0e0/r - 1.0e0/Rs)
           A_bf = 4.34e25*Z*(1.0e0 + X)/tog_bf
           A_ff = 3.68e22*cst.g_ff*(1.0e0 - Z)*(1.0e0 + X)
-          Afac = A_bf + A_ff
+          Afac = (A_bf + A_ff)
           P_ip1 = np.sqrt((1.0e0/4.25e0)*(16.0e0/3.0e0*np.pi*cst.a*cst.c)*(cst.G*M_rip1/L_rip1)*(cst.k_B/(Afac*mu*cst.m_H)))*T_ip1**4.25e0
 
 #
@@ -67,12 +67,13 @@ def STARTMDL(deltar, X, Z, mu, Rs, r_i, M_ri, L_ri, tog_bf,irc,cst):
 
       return r,P_ip1, M_rip1, L_rip1, T_ip1
 
+
 #
 #  Subroutine EOS calculates the values of density, opacity, the 
 #  guillotine-to-gaunt factor ratio, and the energy generation rate at
 #  the radius r.
 #
-def   EOS(X, Y, Z, XCNO, mu, P, T,izone,cst):
+def   EOS(X, Y, Z, XCNO, mu, P, T,izone,cst,idrflg):
 
 #
 #  Solve for density from the ideal gas law (remove radiation pressure)#
@@ -93,7 +94,18 @@ def   EOS(X, Y, Z, XCNO, mu, P, T,izone,cst):
 
       Prad = cst.a*T**4/3.0e0
       Pgas = P - Prad
-      rho=(mu*cst.m_H/cst.k_B)*(Pgas/T)
+      
+      #rho=(mu*cst.m_H/cst.k_B)*(Pgas/T)
+
+      if (idrflg == 1 and Pgas <= 0):
+           Pgas =5000*P
+      elif (idrflg == 2 and Pgas <= 0):
+           Pgas = 0.0001*P
+      elif(idrflg == 0 and Pgas <= 0):
+          Pgas = P
+      if (T > 0. and Pgas > 0.):
+           rho=(mu*cst.m_H/cst.k_B)*(Pgas/T)
+      
       if (rho < 0.0e0):
           print(' I am sorry, but a negative density was detected.')
           print(' my equation-of-state routine is a bit baffled by this new')
@@ -120,12 +132,14 @@ def   EOS(X, Y, Z, XCNO, mu, P, T,izone,cst):
       k_bf = 4.34e25/tog_bf*Z*(1.0e0 + X)*rho/T**3.5e0
       k_ff = 3.68e22*cst.g_ff*(1.0e0 - Z)*(1.0e0 + X)*rho/T**3.5e0
       k_e = 0.2e0*(1.0e0 + X)
-      kappa = k_bf + k_ff + k_e
 
-      if ((T > 3000. and T < 6000.) and (rho > 1E-13 and rho < 1E-8) and (Z > 0.001 and Z < 0.03)):
+      if ((T > 3000. and T < 6000.) and (rho > 1E-10 and rho < 1E-5) and (Z > 0.001 and Z < 0.03)):
           k_Hminus = 2.498e-31*(Z/0.02)*np.sqrt(rho)*T**9         # Eq. (9.28) C&O in cgs
       else:
           k_Hminus = 0
+         
+      kappa = (k_bf + k_ff + k_e + k_Hminus)
+         
 #
 #  Compute energy generation by the pp chain and the CNO cycle.  These
 #  are calculated using Eqs. (10.49) and (10.53) Prialnik Eq. 4.6, 4.7 + screening factor, which come from
@@ -175,54 +189,49 @@ def dLdr(r, rho, epslon,cst):
 
 def dTdr(r, M_r, L_r, T, rho, kappa, mu, irc,cst):
       if (irc == 0):
-          return (-(3.0e0/(16.0e0*np.pi*cst.a*cst.c))*kappa*rho/T**3*L_r/r**2)
+          #return (-(3.0e0/(16.0e0*np.pi*cst.a*cst.c))*kappa*rho/T**3*L_r/r**2)
+          return -(kappa*rho/T**3)*(L_r/4./np.pi/r**2)*(3/4/cst.a/cst.c)
 #  This is the adiabatic convective temperature gradient (Prialnik Eq. 6.29 or C&O Eq. 10.81).
       else:
-          return (-1.0e0/cst.gamrat*cst.G*M_r/r**2*mu*cst.m_H/cst.k_B)
+          return -(1.0/cst.gamrat)* (mu*cst.m_H/cst.k_B)*(cst.G*M_r/r**2)
 
 #
 # Runge-kutta algorithm
 #
-def RUNGE(f_im1, dfdr, r_im1, deltar, irc, X, Y, Z, XCNO,mu, izone,cst):
+def RUNGE(f_0, dfdr, r_0, deltar, irc, X, Y, Z, XCNO,mu, izone,cst,idrflg):
 
       f_temp=np.zeros(4)
       f_i=np.zeros(4)
 
       dr12 = deltar/2.0e0
       dr16 = deltar/6.0e0
-      r12  = r_im1 + dr12
-      r_i  = r_im1 + deltar
+      r12  = r_0 + dr12
+      r_i  = r_0 + deltar
 #
 #  Calculate intermediate derivatives from the four fundamental stellar
 #  structure equations found in Subroutine FUNDEQ.
 #
-      for i in range(0,4):
-          f_temp[i] = f_im1[i] + dr12*dfdr[i]
 
-      df1, ierr = FUNDEQ(r12, f_temp, irc, X, Y, Z, XCNO, mu, izone,cst)
+      k1 = deltar*dfdr
+      
+      df1, ierr = FUNDEQ(f_0, r_0 + deltar/2, f_0 + k1/2, irc, X, Y, Z, XCNO, mu, izone,cst,idrflg)
       if (ierr != 0):
           return f_i,ierr
-#
+      k2 = deltar*df1
 
-      for i in range(0,4):
-          f_temp[i] = f_im1[i] + dr12*df1[i]
-
-      df2,ierr = FUNDEQ(r12, f_temp, irc, X, Y, Z, XCNO, mu, izone,cst)
+      df2,ierr = FUNDEQ(f_0, r_0 + deltar/2, f_0 + k2/2, irc, X, Y, Z, XCNO, mu, izone,cst,idrflg)
       if (ierr != 0):
           return f_i,ierr
+      k3 = deltar*df2
 
-#
-      for i in range(0,4):
-          f_temp[i] = f_im1[i] + deltar*df2[i]
-
-      df3,ierr=FUNDEQ(r_i, f_temp, irc, X, Y, Z, XCNO, mu, izone,cst)
+      df3,ierr=FUNDEQ(f_0, r_0 + deltar, f_0 + k3, irc, X, Y, Z, XCNO, mu, izone,cst,idrflg)
       if (ierr != 0):
           return f_i,ierr
+      k4 = deltar*df3
 #
 #  Calculate the variables at the next shell (i + 1).
 #
-      for i in range(0,4):
-          f_i[i] = f_im1[i] + dr16*(dfdr[i] + 2.0e0*df1[i] + 2.0e0*df2[i] + df3[i])
+      f_i = f_0 + (k1/6 + k2/3 + k3/3 + k4/6)
 
       return f_i,0
 
@@ -233,20 +242,27 @@ def RUNGE(f_im1, dfdr, r_im1, deltar, irc, X, Y, Z, XCNO,mu, izone,cst):
 #
 #      Subroutine FUNDEQ(r, f, irc, X, Z, XCNO, mu, izone,cst)
 
-def FUNDEQ(r,f,irc,X,Y,Z,XCNO,mu,izone,cst):
+def FUNDEQ(f0,r,f,irc,X,Y,Z,XCNO,mu,izone,cst,idrflg):
 
       dfdr=np.zeros(4)
-      P   = f[0]
-      M_r = f[1]
-      L_r = f[2]
-      T   = f[3]
-      rho,kappa,epslon,tog_bf,ierr = EOS(X, Y, Z, XCNO, mu, P, T, izone,cst)
+      P0, M_r0, L_r0, T0   = f0
+      P, M_r, L_r, T   = f
+      
+      rho,kappa,epslon,tog_bf,ierr = EOS(X, Y, Z, XCNO, mu, P, T, izone,cst,idrflg)
+      
+      dlnPdlnT = ((T0 + T)/(P0 + P))*((P0 - P)/(T0 - T))
+      
+      if (dlnPdlnT < cst.gamrat):
+          irc = 1
+      else:
+          irc = 0
+            
       dfdr[0] = dPdr(r, M_r, rho,cst)
       dfdr[1] = dMdr(r, rho,cst)
       dfdr[2] = dLdr(r, rho, epslon,cst)
       dfdr[3] = dTdr(r, M_r, L_r, T, rho, kappa, mu, irc,cst)
+      
       return (dfdr,ierr)
-
 
 
 def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
@@ -328,7 +344,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 
       # Various run time parameters
 
-      Nstart=10
+      Nstart=1
       Nstop=999
       Igoof=-1
       ierr=0
@@ -354,9 +370,9 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
       #     g_ff = free-free opacity gaunt factor (assumed to be unity)
       #
 
-      Rsun=6.9599e10
-      Msun=1.989e33
-      Lsun=3.826e33
+      Rsun=6.95508e10 #6.9599e10
+      Msun=1.9891e33
+      Lsun=3.8387811e33
 
       # For convenience we will store most constants in a single variable
 
@@ -364,12 +380,12 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
            pass
       cst = Constants()
 
-      cst.sigma=5.67051e-5
+      cst.sigma=5.6704e-5
       cst.c=2.99792458e10
       cst.a=7.56591e-15
       cst.G=6.67259e-8
-      cst.k_B=1.380658e-16
-      cst.m_H=1.673534e-24
+      cst.k_B=1.3806503e-16
+      cst.m_H=1.673532499e-24
       cst.gamma= 5.0e0/3
       cst.g_ff= 1.0e0
 
@@ -383,19 +399,20 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #
       Ms = Msolar*Msun
       Ls = Lsolar*Lsun
-      Rs = np.sqrt(Ls/(4.e0*np.pi*cst.sigma))/Te**2
+      Rs = np.sqrt(Ls/(4*np.pi*cst.sigma*Te**4))
       Rsolar = Rs/Rsun
 #
 #  Begin with a very small step size since surface conditions vary
 #  rapidly.
 #
-      deltar = -Rs/1000.0e0
+      deltar = -Rs/1000.
       idrflg = 0
 #
 #  Calculate mean molecular weight mu assuming complete ionization
 #  (see Prialnik Eq. 3.18, 3.25 or C&O Eq. 10.21).
 #
       mu = 1.0e0/(2.0*X + 0.75*Y + 0.5*Z)
+      
 #
 #  Calculate the delimiter between adiabatic convection and radiation
 #  (see Prialnik Eq. 6.28 or C&O Eq. 10.87).
@@ -422,7 +439,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
           epslon[initsh] = 0.0
           tog_bf[initsh] = 0.01
       else:
-          rho[initsh],kappa[initsh],epslon[initsh],tog_bf[initsh],ierr=EOS(X, Y, Z, XCNO, mu, P[initsh], T[initsh], 0 ,cst)
+          rho[initsh],kappa[initsh],epslon[initsh],tog_bf[initsh],ierr=EOS(X, Y, Z, XCNO, mu, P[initsh], T[initsh], 0 ,cst,idrflg)
           if ierr != 0:
               print ("we're stopping now")
               istop=0
@@ -436,11 +453,14 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #
       cst.kPad = 0.3e0
       irc = 0
-      dlPdlT[initsh] = 4.25e0
+      dlPdlT[initsh] = 4.5
+      
       for i in range(0,Nstart):
           ip1 = i + 1
-          r[ip1],P[ip1],M_r[ip1],L_r[ip1],T[ip1]=STARTMDL(deltar, X, Z, mu, Rs, r[i], M_r[i], L_r[i], tog_bf[i], irc,cst)
-          rho[ip1],kappa[ip1],epslon[ip1],tog_bf[ip1],ierr=EOS(X, Y, Z, XCNO, mu, P[ip1], T[ip1], ip1 ,cst)
+          r[ip1],P[ip1],M_r[ip1],L_r[ip1],T[ip1]=STARTMDL(i, deltar, X, Z, mu, Rs, Te, r[i], M_r[i], L_r[i], tog_bf[i], irc,cst)
+          rho[ip1],kappa[ip1],epslon[ip1],tog_bf[ip1],ierr=EOS(X, Y, Z, XCNO, mu, P[ip1], T[ip1], ip1 ,cst,idrflg)
+          
+          dlnPdlnT0 = ((T[i] + T[ip1])/(P[i] + P[ip1]))*((P[i] - P[ip1])/(T[i] - T[ip1]))
 
           if ierr != 0:
               print('Values from the previous zone are:')
@@ -459,9 +479,9 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #  Update the adiabatic gas constant if necessary.
 #
           if (i > initsh):
-              dlPdlT[ip1] = np.log(P[ip1]/P[i])/np.log(T[ip1]/T[i])
+              dlPdlT[ip1] = ((T[i] + T[ip1])/(P[i] + P[ip1]))*((P[i] - P[ip1])/(T[i] - T[ip1])) 
           else:
-              dlPdlT[ip1] = dlPdlT[i]
+              dlPdlT[ip1] = ((T[i] + T[ip1])/(P[i] + P[ip1]))*((P[i] - P[ip1])/(T[i] - T[ip1]))
 
           if (dlPdlT[ip1] < cst.gamrat):
               irc = 1
@@ -475,7 +495,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #
           deltaM = deltar*dMdr(r[ip1], rho[ip1],cst)
           M_r[ip1] = M_r[i] + deltaM
-          if (np.abs(deltaM) > (0.001e0*Ms)):
+          if (np.abs(deltaM) > (1.0e-8*Ms)):
               if (ip1 > 1):
                   ip1 = ip1 - 1
                   print(' The variation in mass has become larger than 0.001*Ms')
@@ -512,6 +532,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
           istop=Nstop
 
       for i in range(Nsrtp1,Nstop):
+          
           im1 = i - 1
           f_im1[0] = P[im1]
           f_im1[1] = M_r[im1]
@@ -521,7 +542,8 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
           dfdr[1]  = dMdr(r[im1], rho[im1],cst)
           dfdr[2]  = dLdr(r[im1], rho[im1], epslon[im1],cst)
           dfdr[3]  = dTdr(r[im1], M_r[im1], L_r[im1], T[im1], rho[im1],kappa[im1], mu, irc,cst)
-          f_i,ierr=RUNGE(f_im1, dfdr, r[im1], deltar, irc, X, Y, Z, XCNO, mu, i,cst)
+          
+          f_i,ierr=RUNGE(f_im1, dfdr, r[im1], deltar, irc, X, Y, Z, XCNO, mu, i,cst,idrflg)
 
           if (ierr != 0):
               print(' The problem occurred in the Runge-Kutta routine')
@@ -549,7 +571,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #  Calculate the density, opacity, and energy generation rate for
 #  this zone.
 #
-          rho[i],kappa[i],epslon[i],tog_bf[i],ierr=EOS(X, Y, Z, XCNO, mu, P[i], T[i], i, cst)
+          rho[i],kappa[i],epslon[i],tog_bf[i],ierr=EOS(X, Y, Z, XCNO, mu, P[i], T[i], i, cst,idrflg)
 
           if (ierr != 0):
               print(' Values from the previous zone are:')
@@ -574,6 +596,9 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #  (see Prialnik Eq. 6.28 or C&O Eq. 10.87).  Set the convection flag appropriately.
 #
           dlPdlT[i] = np.log(P[i]/P[im1])/np.log(T[i]/T[im1])
+          #dlPdlT[i] = ((T[im1] + T[i])/(P[im1] + P[i]))*((P[im1] - P[i])/(T[im1] - T[i]))
+          
+          
           if (dlPdlT[i] < cst.gamrat):
               irc = 1
           else:
@@ -646,10 +671,10 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
               Pcore  = f_P(r[i])
               Tcore  = f_T(r[i])
 
-              if ((rhocor < rho[i]) or (rhocor > rhomax)):
+              if ((np.abs(rhocor- rho[i])/rho[i] > 0.01) or (rhocor > rhomax)):
                   # rho is off either large or small
                   Igoof = 1
-              elif (epscor < epslon[i]):
+              elif (np.abs(epscor - epslon[i])/epslon[i] > 0.01):
                   # energy generation rate a bit off (low)
                   Igoof = 2
               elif (Tcore < T[i]):
@@ -666,11 +691,13 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 #  Is it time to change the step size?
 #
           if ((idrflg == 0) and (M_r[i] < (0.99e0*Ms))):
-               deltar = (-1.0)*Rs/100.0e0
-               idrflg = 1
+          
+              deltar = (-1.0)*Rs/100
+              idrflg = 1
 
           if ((idrflg == 1) and (deltar >= (0.5*r[i]))):
                deltar = (-1.0)*Rs/5000.0e0
+             
                idrflg = 2
 
           istop = i
@@ -717,7 +744,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
               print('The core epsilon seems a bit off,')
               print(' epsilon should vary smoothly near the center.')
               print(' The value calculated for the last zone was eps =',epslon[istop],' ergs/g/s')
-
+              print(epscor)
           if (Igoof == 3):
               print('It looks like you are getting close,')
               print('however, there are still a few minor errors')
@@ -795,7 +822,7 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
       f.write('   r        Qm       L_r       T        P        rho      kap      eps     dlPdlT\n')
 
       for ic in range(0,istop+1):
-          i = istop - ic
+          i = ic #istop+1 - ic
           Qm = 1.0e0 - M_r[i]/Ms    # Total mass fraction down to radius
 
 
@@ -807,8 +834,8 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
               dlPdlT[i] = np.copysign(dlPlim,dlPdlT[i])
               clim = '*'
           else:
-              clim = ' '
-          s='{0:7.2E} {1:7.2E} {2:7.2E} {3:7.2E} {4:7.2E} {5:7.2E} {6:7.2E} {7:6.2E}{8:1s}{9:1s} {10:5.1f}\n'.format(r[i], Qm, L_r[i], T[i], P[i], rho[i], kappa[i],epslon[i], clim, rcf, dlPdlT[i])
+               clim = ' '
+          s='{0:7.3E} {1:7.3E} {2:7.3E} {3:7.3E} {4:7.3E} {5:7.3E} {6:7.3E} {7:6.3E}{8:1s}{9:1s} {10:5.1f}\n'.format(r[i], Qm, L_r[i], T[i], P[i], rho[i], kappa[i],epslon[i], clim, rcf, dlPdlT[i])
           f.write(s)
 
 #     Output to screen
@@ -816,29 +843,33 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
       print('***** The integration has been completed *****')
       print('      The model has been stored in starmodl_py.dat')
       print
-      return Igoof,ierr,istop
-
-def main():
-
-#
-#  Enter desired stellar parameters
-#
+      
+      resdidual = np.mean([np.abs(rhocor- rho[i])/rho[i], np.abs(epscor - epslon[i])/epslon[i], np.abs(Tcore - T[i])/T[i]])
+      return Igoof,ierr,istop, resdidual
 
 
-      getinp=1  # read in input
-      if (getinp == 1):
-            Msolar=float(input(' Enter the mass of the star (in solar units):'))
-            Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
-            Te=float(input(' Enter the effective temperature of the star (in K):'))
-            Y=-1.0
-            while (Y < 0.0):
-                X=float(input(' Enter the mass fraction of hydrogen (X):'))
-                Z=float(input(' Enter the mass fraction of metals (Z):'))
-                Y = 1.e0 - X - Z
-                if Y < 0:
-                    print('You must have X + Z <= 1. Please reenter composition.')
 
-      Igoof,ierr,istop=StatStar(Msolar,Lsolar,Te,X,Z)
+# def main():
 
-main()
+# #
+# #  Enter desired stellar parameters
+# #
+
+
+#       getinp=1  # read in input
+#       if (getinp == 1):
+#            Msolar=float(input(' Enter the mass of the star (in solar units):'))
+#            Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
+#            Te=float(input(' Enter the effective temperature of the star (in K):'))
+#            Y=-1.0
+#            while (Y < 0.0):
+#                X=float(input(' Enter the mass fraction of hydrogen (X):'))
+#                Z=float(input(' Enter the mass fraction of metals (Z):'))
+#                Y = 1.e0 - X - Z
+#                if Y < 0:
+#                    print('You must have X + Z <= 1. Please reenter composition.')
+
+#       Igoof,ierr,istop=StatStar(Msolar,Lsolar,Te,X,Z)
+
+# main()
 
