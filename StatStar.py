@@ -621,11 +621,11 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
           # use python to extrapolate to core r[i], Qm, L_r[i], T[i], P[i], rho[i], kappa[i],epslon[i], clim, rcf, dlPdlT[i]
           from scipy import interpolate
                 
-          f_Lr = interpolate.interp1d(r[0:i], L_r[0:i], fill_value='extrapolate')
-          f_T = interpolate.interp1d(r[0:i], T[0:i], fill_value='extrapolate')
-          f_P = interpolate.interp1d(r[0:i], P[0:i], fill_value='extrapolate')
-          f_rho = interpolate.interp1d(r[0:i], rho[0:i], fill_value='extrapolate')
-          f_eps = interpolate.interp1d(r[0:i], epslon[0:i], fill_value='extrapolate')
+          f_Lr = interpolate.interp1d(r[0:i], L_r[0:i], fill_value='extrapolate',kind='linear')
+          f_T = interpolate.interp1d(r[0:i], T[0:i], fill_value='extrapolate',kind='linear')
+          f_P = interpolate.interp1d(r[0:i], P[0:i], fill_value='extrapolate',kind='linear')
+          f_rho = interpolate.interp1d(r[0:i], rho[0:i], fill_value='extrapolate',kind='linear')
+          f_eps = interpolate.interp1d(r[0:i], epslon[0:i], fill_value='extrapolate',kind='linear')
           
           if ((r[i] <= np.abs(deltar)) and ((L_r[i] >= (0.1e0*Ls)) or (M_r[i] >= (0.01e0*Ms)))):
               #   Hit center before mass/luminosity depleted
@@ -657,7 +657,9 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
               # rhocor = M_r[i]/(4./3.*np.pi*r[i]**3)
               # # set maximum reasonable core mass
               rhomax = 10.0e0*(rho[i]/rho[im1])*rho[i]
-            #   epscor = L_r[i]/M_r[i]
+              print('entrou...')
+              
+            #  epscor = L_r[i]/M_r[i]
             #   # P: Taylor expansion at center
             #   Pcore  = P[i] + 2.0e0/3.0e0*np.pi*cst.G*rhocor**2*r[i]**2
             #   # Assume ideal gas
@@ -665,19 +667,19 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
             # # In general, these should all produce values
             #   # that rise towards center (but not too high)
                     
-              # core values from python extrapolation
-              rhocor = f_rho(r[i])
-              epscor = f_eps(r[i])
-              Pcore  = f_P(r[i])
-              Tcore  = f_T(r[i])
+              # # core values from python extrapolation
+              rhocor = f_rho(0.)
+              epscor = f_eps(0.)
+              Pcore  = f_P(0.)
+              Tcore  = f_T(0.)
 
-              if ((np.abs(rhocor- rho[i])/rho[i] > 0.01) or (rhocor > rhomax)):
+              if ((np.abs(rhocor- rho[i])/rho[i] > 0.02) or (rhocor > rhomax)):
                   # rho is off either large or small
                   Igoof = 1
-              elif (np.abs(epscor - epslon[i])/epslon[i] > 0.01):
+              elif (np.abs(epscor - epslon[i])/epslon[i] > 0.1):
                   # energy generation rate a bit off (low)
                   Igoof = 2
-              elif (Tcore < T[i]):
+              elif (np.abs(Tcore - T[i])/T[i] > 0.02):
                   # Temperature a bit off (low)
                   Igoof = 3
               else:
@@ -710,15 +712,15 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
       # Pcore  = P[istop] + 2.0e0/3.0e0*np.pi*cst.G*rhocor**2*r[istop]**2
       # Tcore  = Pcore*mu*cst.m_H/(rhocor*cst.k_B)
       
-      rhocor = f_rho(r[istop])
-      epscor = f_eps(r[istop])
-      Pcore  = f_P(r[istop])
-      Tcore  = f_T(r[istop])
+      # rhocor = f_rho(r[istop])
+      # epscor = f_eps(r[istop])
+      # Pcore  = f_P(r[istop])
+      # Tcore  = f_T(r[istop])
 
-      rhocor = f_rho(0.)
-      epscor = f_eps(0.)
-      Pcore  = f_P(0.)
-      Tcore  = f_T(0.)
+      # rhocor = f_rho(0.)
+      # epscor = f_eps(0.)
+      # Pcore  = f_P(0.)
+      # Tcore  = f_T(0.)
 
       if  (Igoof != 0):
           if (Igoof == -1):
@@ -748,10 +750,10 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
           if (Igoof == 3):
               print('It looks like you are getting close,')
               print('however, there are still a few minor errors')
-              print(' Your extrapolated central temperature is too low')
+              print(' Your extrapolated central temperature is a bit off')
               print(' a little more fine tuning ought to do it.')
               print(' The value calculated for the last zone was T = ',T[istop],' K')
-
+              print (Tcore)
           if (Igoof == 4):
               print('Sorry to be the bearer of bad news, but...')
               print('       Your model has some problems')
@@ -807,11 +809,20 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
       if do_plots:
           import matplotlib.pyplot as plt
           plt.figure()
-          plt.plot(r[0:istop+1],L_r[0:istop+1]/L_r[0:istop+1].max(),label='luminosity')
+          # plt.plot(r[0:istop+1],L_r[0:istop+1]/L_r[0:istop+1].max(),label='luminosity')
+          # plt.plot(r[0:istop+1],T[0:istop+1]/T[0:istop+1].max(),label='temperature')
+          # plt.plot(r[0:istop+1],P[0:istop+1]/P[0:istop+1].max(),label='pressure')
+          # plt.plot(r[0:istop+1],rho[0:istop+1]/rho[0:istop+1].max(),'o',label='density')
+          # plt.plot(r[0:istop+1],epslon[0:istop+1]/epslon[0:istop+1].max(),'o',label='Eps')
+          
+          plt.plot(r[0:istop+1],L_r[0:istop+1]/Lcore,label='luminosity')
           plt.plot(r[0:istop+1],T[0:istop+1]/T[0:istop+1].max(),label='temperature')
           plt.plot(r[0:istop+1],P[0:istop+1]/P[0:istop+1].max(),label='pressure')
-          plt.plot(r[0:istop+1],rho[0:istop+1]/rho[0:istop+1].max(),label='density')
+          plt.plot(r[0:istop+1],rho[0:istop+1]/rho[0:istop+1].max(),'o',label='density')
+          plt.plot(r[0:istop+1],epslon[0:istop+1]/epslon[0:istop+1].max(),'o',label='Eps')
+          
           plt.legend()
+          plt.show()
 
 #
 #  Print data from the center of the star outward, labeling convective
@@ -849,27 +860,27 @@ def StatStar(Msolar,Lsolar,Te,X,Z, do_plots=True):
 
 
 
-# def main():
+def main():
 
-# #
-# #  Enter desired stellar parameters
-# #
+#
+#  Enter desired stellar parameters
+#
 
 
-#       getinp=1  # read in input
-#       if (getinp == 1):
-#            Msolar=float(input(' Enter the mass of the star (in solar units):'))
-#            Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
-#            Te=float(input(' Enter the effective temperature of the star (in K):'))
-#            Y=-1.0
-#            while (Y < 0.0):
-#                X=float(input(' Enter the mass fraction of hydrogen (X):'))
-#                Z=float(input(' Enter the mass fraction of metals (Z):'))
-#                Y = 1.e0 - X - Z
-#                if Y < 0:
-#                    print('You must have X + Z <= 1. Please reenter composition.')
+      getinp=1  # read in input
+      if (getinp == 1):
+            Msolar=float(input(' Enter the mass of the star (in solar units):'))
+            Lsolar=float(input(' Enter the luminosity of the star (in solar units):'))
+            Te=float(input(' Enter the effective temperature of the star (in K):'))
+            Y=-1.0
+            while (Y < 0.0):
+                X=float(input(' Enter the mass fraction of hydrogen (X):'))
+                Z=float(input(' Enter the mass fraction of metals (Z):'))
+                Y = 1.e0 - X - Z
+                if Y < 0:
+                    print('You must have X + Z <= 1. Please reenter composition.')
 
-#       Igoof,ierr,istop=StatStar(Msolar,Lsolar,Te,X,Z)
+      Igoof,ierr,istop,res=StatStar(Msolar,Lsolar,Te,X,Z)
 
-# main()
+main()
 
