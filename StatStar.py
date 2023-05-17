@@ -413,7 +413,7 @@ def dfdT(T):
 # running the model
 ###############################################################################
 
-def StatStar(Msolar,Lsolar,Teff,X,Z, do_plots=True):
+def StatStar(Msolar,Lsolar,Teff,X,Z, do_plots=False):
     max_zones = 8000
     # calculate Stellar radius
     Rs = np.sqrt(Lsolar*cst.L_Sun/(4*np.pi*cst.sigma*Teff**4))
@@ -509,7 +509,7 @@ def StatStar(Msolar,Lsolar,Teff,X,Z, do_plots=True):
             
         # check if maximum of zones has been reached            
         if (i == max_zones-1):
-            print('The model reached number of zones')
+            print('The model reached maximum number of zones')
             end_zone_flag = True
 
         # end of star reached before convergence
@@ -651,7 +651,9 @@ def StatStar(Msolar,Lsolar,Teff,X,Z, do_plots=True):
         plt.plot(r,T/T.max(),'-o',label='temperature')
         plt.plot(r,P/P.max(),'-o',label='pressure')
         plt.plot(r,rho/rho.max(),'-o',label='density')
-        plt.plot(r,eps/eps.max(),'-o',label='Eps')          
+        plt.plot(r,eps/eps.max(),'-o',label='Eps')  
+        plt.xlabel('Radius (m)')
+        plt.ylabel('Normalized value')        
         plt.legend()
         plt.show()
         
