@@ -683,8 +683,8 @@ def StatStar(Msolar,Lsolar,Teff,X,Z, do_plots=False):
         i = ic #istop+1 - ic
         Qm = 1.0e0 - M[i]/Ms    # Total mass fraction down to radius
 
-
-        if (dlnPdlnT[i] < gamma):
+        gamma_ratio = gamma/(gamma - 1)
+        if (dlnPdlnT[i] < gamma_ratio):
             rcf = ' c '
         else:
             rcf = ' r '
